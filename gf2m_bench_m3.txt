@@ -18,3 +18,5 @@ minji0022@Minjis-MacBook-Pro paloma_202401 % ./a.out
 0.024861 sec. 10000000-INV over GF(2^m) with TABLE
 
 --------------------------------------------------------
+
+
