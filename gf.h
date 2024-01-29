@@ -1,9 +1,11 @@
+#ifndef GF_H
+#define GF_H
+
 #include "config.h"
 
 #define IRR_POLY 0b10000011100001 // x^13 + x^7 + x^6 + x^5 + 1
 
-typedef struct 
-{   
+typedef struct{   
     // Multiplication Pre-computation Table
     gf mul_11_tab[1 << GF2M_SPLIT_HIGH][1 << GF2M_SPLIT_HIGH]; // A1(z) z^7 * B1(z) z^7 mod f(z) (상위 6bit x 상위 6bit)
     gf mul_10_tab[1 << GF2M_SPLIT_HIGH][1 << GF2M_SPLIT_LOW]; // A1(z) z^7 * B0(z), A0(z) * B1(z) z^7 mod f(z) (상위 6bit x 하위 7bit)
@@ -31,3 +33,5 @@ gf gf2m_sqrt_w_tab(IN gf in, IN gf* sqrt_tab);
 
 gf gf2m_inv(IN gf in);
 gf gf2m_inv_w_tab(IN gf in, IN gf* inv_tab);
+
+#endif

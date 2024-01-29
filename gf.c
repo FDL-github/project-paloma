@@ -35,7 +35,7 @@ void gf2m_print(IN gf in)
 */
 gf gf2m_add(IN gf in1, IN gf in2)
 {
-    return (in1 & MASKBITS) ^ (in2 & MASKBITS);
+    return in1 ^ in2;
 }
 
 /**
@@ -59,7 +59,7 @@ gf gf2m_mul(IN gf in1, gf in2)
             t1 <<= 1;        
     } 
 
-    return result;
+    return result & MASKBITS;
 }
 
 /**
@@ -119,7 +119,7 @@ gf gf2m_sqrt(IN gf in)
     for(int i = 0; i < 12; i++) // a^(2^12)
 		result = gf2m_square(result);
 
-    return result;
+    return result & MASKBITS;
 }
 
 /**
@@ -156,7 +156,7 @@ gf gf2m_inv(IN gf in)
     result = gf2m_mul(result,a_63);       // a^4095
     result = gf2m_square(result);         // a^8190 ... a^13 - 2 의 값을 출력함. 
 
-    return result;
+    return result & MASKBITS;
 }
 
 /**

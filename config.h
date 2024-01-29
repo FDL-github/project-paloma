@@ -10,6 +10,56 @@
 
 #define Param_M 13
 
+/**
+ * @brief Set PALOMA_MODE
+ * PALOMA_MODE == 0: PALOMA-128
+ * PALOMA_MODE == 1: PALOMA-192
+ * PALOMA_MODE == 2: PALOMA-256
+ */
+#define PALOMA_MODE 1
+
+#if PALOMA_MODE == 0
+    #define n 3904
+    #define t 64
+    #define k (n - (13 * t))
+
+    #define PUBLICKEYBYTES 319488
+    #define SECRETKEYBYTES 93008
+    #define CIPHERTEXTBYTES 136
+    #define BYTES 32
+
+#elif PALOMA_MODE == 1
+    #define n 5568
+    #define t 128
+    #define k (n - (13 * t))
+
+    #define PUBLICKEYBYTES 812032
+    #define SECRETKEYBYTES 355400
+    #define CIPHERTEXTBYTES 240
+    #define BYTES 32
+
+#elif PALOMA_MODE == 2
+    #define n 6592
+    #define t 128
+    #define k (n - (13 * t))
+
+    #define PUBLICKEYBYTES 1025024
+    #define SECRETKEYBYTES 357064
+    #define CIPHERTEXTBYTES 240
+    #define BYTES 32
+
+#endif
+
+/*
+   all elements of F2m is ' z^12 + ... +a_0z^0 ' > 0 || 0 || 0 || a_12 || a_11 || .... || a_0  : 2bytes
+*/
+typedef uint16_t gf;
+
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+
 /*
     곱셈 사전 계산 테이블을 위한 변수
 */
@@ -27,11 +77,4 @@
 #define BITSIZE (1 << Param_M) 
 #define MASKBITS ((1 << Param_M) - 1) 
 
-/*
-   all elements of F2m is ' z^12 + ... +a_0z^0 ' > 0 || 0 || 0 || a_12 || a_11 || .... || a_0  : 2bytes
-*/
-typedef uint16_t gf;
-
-typedef uint8_t u8;
-typedef uint32_t u32;
 #endif
