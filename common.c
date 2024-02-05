@@ -45,7 +45,7 @@ void shuffle(OUT gf* shuffled_set, IN int set_len, IN u64* _256bits_seed_r){  //
     /* shuffling */
     for(i = set_len - 1; i > 0; i--)
     {
-        j = seed[w % 16] % (i + 1);   
+        j = ((seed[w % 16]) % (i + 1));   
         
         /* swap */          
         tmp = shuffled_set[j];

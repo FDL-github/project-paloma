@@ -35,15 +35,15 @@
  */
 void gen_goppa_poly(OUT gf *gx, IN gf *gf_set, IN gf2m_tab *gf2m_tables)
 {
-    gf t_gx[t + 1] = {0};
-    gf tx[t + 1] = {0};
+    gf t_gx[PARAM_T + 1] = {0};
+    gf tx[PARAM_T + 1] = {0};
 
     // init: set g(x) = x - a_0
     t_gx[0] = gf_set[0];
     t_gx[1] = 1;
 
     // compute (x - a_t) * ... * (x - a_1) * (x - a_0)
-    for (int i = 1; i < t; i++)
+    for (int i = 1; i < PARAM_T; i++)
     {
         // multiplicate g(x) with (x - a_i)
         for (int j = 0; j <= i; j++)
@@ -61,7 +61,7 @@ void gen_goppa_poly(OUT gf *gx, IN gf *gf_set, IN gf2m_tab *gf2m_tables)
     }
 
     // return
-    for (int i = 0; i <= t; i++)
+    for (int i = 0; i <= PARAM_T; i++)
         gx[i] = t_gx[i];
 }
 

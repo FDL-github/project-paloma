@@ -30,7 +30,7 @@
 int gf_poly_get_degree(gf *ax)
 {
 	// find degree
-	for (int i = t; i >= 0; i--)
+	for (int i = PARAM_T; i >= 0; i--)
 	{
 		if (ax[i] != 0)
 			return i;
@@ -45,7 +45,7 @@ int gf_poly_get_degree(gf *ax)
  */
 void gf_poly_copy(gf *cx, gf *ax)
 {
-	for (int i = 0; i <= t; i++)
+	for (int i = 0; i <= PARAM_T; i++)
 		cx[i] = ax[i];
 }
 
@@ -55,7 +55,7 @@ void gf_poly_copy(gf *cx, gf *ax)
 void gf_poly_add(OUT gf *cx, IN gf *ax, IN gf *bx)
 {
 	// add
-	for (int i = 0; i <= t; i++)
+	for (int i = 0; i <= PARAM_T; i++)
 		cx[i] = gf2m_add(ax[i], bx[i]);
 }
 
@@ -64,11 +64,11 @@ void gf_poly_add(OUT gf *cx, IN gf *ax, IN gf *bx)
  */
 void poly_mul(OUT gf *cx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables)
 {
-	gf t_cx[t * 2 + 1] = {0};
+	gf t_cx[PARAM_T * 2 + 1] = {0};
 
 	// mult
-	for (int i = 0; i <= t; i++)
-		for (int j = 0; j <= t; j++)
+	for (int i = 0; i <= PARAM_T; i++)
+		for (int j = 0; j <= PARAM_T; j++)
 			t_cx[i + j] ^= gf2m_mul_w_tab(ax[i], bx[j], gf2m_tables);
 
 	// return
@@ -80,18 +80,18 @@ void poly_mul(OUT gf *cx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables)
  */
 void gf_poly_mul(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables)
 {
-	gf t_cx[t * 2 + 1] = {0};
+	gf t_cx[PARAM_T * 2 + 1] = {0};
 
 	// mult
-	for (int i = 0; i <= t; i++)
-		for (int j = 0; j <= t; j++)
+	for (int i = 0; i <= PARAM_T; i++)
+		for (int j = 0; j <= PARAM_T; j++)
 			t_cx[i + j] ^= gf2m_mul_w_tab(ax[i], bx[j], gf2m_tables);
 
 	// get degree of g(x)
 	int dg = gf_poly_get_degree(gx);
 
 	// reduce
-	for (int i = t * 2; i >= dg; i--)
+	for (int i = PARAM_T * 2; i >= dg; i--)
 		for (int j = 0; j <= dg; j++)
 			t_cx[i - dg + j] ^= gf2m_mul_w_tab(t_cx[i], gx[j], gf2m_tables);
 
@@ -104,17 +104,17 @@ void gf_poly_mul(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_
  */
 void gf_poly_sqr(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf2m_tab *gf2m_tables)
 {
-	gf t_cx[t * 2 + 1] = {0};
+	gf t_cx[PARAM_T * 2 + 1] = {0};
 
 	// square
-	for (int i = 0; i <= t; i++)
+	for (int i = 0; i <= PARAM_T; i++)
 		t_cx[2 * i] ^= gf2m_square_w_tab(ax[i], gf2m_tables->square_tab);
 
 	// get degree of g(x)
 	int dg = gf_poly_get_degree(gx);
 
 	// reduce
-	for (int i = t * 2; i >= dg; i--)
+	for (int i = PARAM_T * 2; i >= dg; i--)
 		for (int j = 0; j < dg + 1; j++)
 			t_cx[i - dg + j] ^= gf2m_mul_w_tab(t_cx[i], gx[j], gf2m_tables);
 
@@ -129,7 +129,7 @@ void gf_poly_sqr(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf2m_tab *gf2m_tables)
  */
 void gf_poly_sqrt(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf2m_tab *gf2m_tables)
 {
-	gf t_cx[t * 2 + 1] = {0};
+	gf t_cx[PARAM_T * 2 + 1] = {0};
 
 	// init
 	gf_poly_copy(t_cx, ax);
@@ -149,8 +149,8 @@ void gf_poly_sqrt(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf2m_tab *gf2m_tables)
  */
 void gf_poly_div(OUT gf *qx, OUT gf *rx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables)
 {
-	gf t_qx[t + 1] = {0};
-	gf t_rx[t + 1] = {0};
+	gf t_qx[PARAM_T + 1] = {0};
+	gf t_rx[PARAM_T + 1] = {0};
 	int db, dr;
 
 	// init
@@ -188,14 +188,14 @@ void gf_poly_div(OUT gf *qx, OUT gf *rx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m
  */
 void gf_poly_inv(OUT gf *cx, IN gf *ax, IN gf *gx, IN gf2m_tab *gf2m_tables)
 {
-	gf t_cx[t + 1] = {0};
-	gf o_rx[t + 1] = {0};
-	gf n_rx[t + 1] = {0};
-	gf o_sx[t + 1] = {0};
-	gf n_sx[t + 1] = {0};
-	gf qx[t + 1] = {0};
-	gf rx[t + 1] = {0};
-	gf tx[t + 1] = {0};
+	gf t_cx[PARAM_T + 1] = {0};
+	gf o_rx[PARAM_T + 1] = {0};
+	gf n_rx[PARAM_T + 1] = {0};
+	gf o_sx[PARAM_T + 1] = {0};
+	gf n_sx[PARAM_T + 1] = {0};
+	gf qx[PARAM_T + 1] = {0};
+	gf rx[PARAM_T + 1] = {0};
+	gf tx[PARAM_T + 1] = {0};
 	gf ir;
 
 	// init
@@ -220,7 +220,7 @@ void gf_poly_inv(OUT gf *cx, IN gf *ax, IN gf *gx, IN gf2m_tab *gf2m_tables)
 	ir = gf2m_tables->inv_tab[o_rx[0]];
 
 	// compute final of EEA
-	for (int i = 0; i <= t; i++)
+	for (int i = 0; i <= PARAM_T; i++)
 		t_cx[i] = gf2m_mul_w_tab(o_sx[i], ir, gf2m_tables); // c(x) = 1/old_r(x) × old_s(x)
 
 	// return
@@ -234,9 +234,9 @@ void gf_poly_inv(OUT gf *cx, IN gf *ax, IN gf *gx, IN gf2m_tab *gf2m_tables)
  */
 gf gf_poly_eval(IN gf *ax, IN gf gfa, IN gf2m_tab *gf2m_tables)
 {
-	gf ret = ax[t];
+	gf ret = ax[PARAM_T];
 
-	for (int i = t - 1; i >= 0; i--)
+	for (int i = PARAM_T - 1; i >= 0; i--)
 	{
 		ret = gf2m_mul_w_tab(ret, gfa, gf2m_tables);
 		ret = gf2m_add(ret, ax[i]);
@@ -250,11 +250,11 @@ gf gf_poly_eval(IN gf *ax, IN gf gfa, IN gf2m_tab *gf2m_tables)
  */
 void gf_poly_gcd(OUT gf *cx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables)
 {
-	gf t_cx[t + 1] = {0};
-	gf o_rx[t + 1] = {0};
-	gf n_rx[t + 1] = {0};
-	gf rx[t + 1] = {0};
-	gf qx[t + 1] = {0};
+	gf t_cx[PARAM_T + 1] = {0};
+	gf o_rx[PARAM_T + 1] = {0};
+	gf n_rx[PARAM_T + 1] = {0};
+	gf rx[PARAM_T + 1] = {0};
+	gf qx[PARAM_T + 1] = {0};
 	gf ir;
 	int dr;
 
@@ -275,7 +275,7 @@ void gf_poly_gcd(OUT gf *cx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables)
 	ir = gf2m_tables->inv_tab[o_rx[dr]];
 
 	// compute final of GCD
-	for (int i = 0; i <= t; i++)
+	for (int i = 0; i <= PARAM_T; i++)
 		t_cx[i] = gf2m_mul_w_tab(ir, o_rx[i], gf2m_tables); // set leading coefficients to zero
 
 	// return
@@ -289,7 +289,7 @@ void gf_poly_print(IN gf *ax)
 {
 	int flag = 0;
 
-	for (int i = t; i >= 0; i--)
+	for (int i = PARAM_T; i >= 0; i--)
 	{
 		if (ax[i] != 0)
 		{
