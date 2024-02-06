@@ -102,21 +102,17 @@ void gen_identity_mat(OUT u64* I_Mat, IN int row){
 // 만약 gf(2바이트에 저장하면) gf HPmat_row[HP_BYTES / 2] = {0,};  unsigned char(1바이트에 저장하면) gf HPmat_row[HP_BYTES] = {0,};  
 int gaussian_row(OUT u64* systematic_mat, IN u64* in_mat)
 {
-
-    u64 HP_hat[HP_NROWS][HP_NCOLS / 64]={{0,},};
-    u64 tmp2 = 0;
+    u64 HP_hat[HP_NROWS][HP_NCOLS / 64] = {{0, }, };
+    u64 tmp = 0;
 
     int cnt = 0;
     for(int j = 0; j < PARAM_N; j++)
     {   
         for(int i = 0; i < (Param_M * PARAM_T); i++)
         {
-            HP_hat[i][cnt] |= (((in_mat[(i + (j * 13 * PARAM_T)) / 64] >> (i % 64)) & 1) << (j % 64));
+            HP_hat[i][cnt] |= (((in_mat[(i + (j * Param_M * PARAM_T)) / 64] >> (i % 64)) & 1) << (j % 64));
         }
-        if(j % 64 == 63)
-        {   
-            cnt ++;
-        }
+        if(j % 64 == 63)    { cnt++; }
     }  
 
     /* Gaussian elimination */
@@ -133,9 +129,9 @@ int gaussian_row(OUT u64* systematic_mat, IN u64* in_mat)
                 {
                     for(int j = 0; j < (HP_NCOLS / 64); j++)
                     {  // HP_hat행렬 i,r 번째 행 스왑. 
-                        tmp2 = HP_hat[i][j];
+                        tmp = HP_hat[i][j];
                         HP_hat[i][j] = HP_hat[r][j];
-                        HP_hat[r][j] = tmp2;
+                        HP_hat[r][j] = tmp;
                     }
                 }
                 flag = 1;
