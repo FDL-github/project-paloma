@@ -180,7 +180,7 @@ void get_scrambled_code(OUT u64* H_hat, OUT u64* S_inv, OUT u64* r_perm_mat, IN 
 * @param [out] pk a public key pk = M (= H_hat[n-k:n])
 * @param [out] sk a secret key sk = (L, g(X), S^{-1}, r) s.t. r is a seed of Perm Mat P.
 */
-void gen_key_pair(OUT u64* pk, OUT u64* sk, IN gf2m_tab* gf2m_tables)
+void gen_key_pair(OUT u64* pk, OUT u64_sk* sk, IN gf2m_tab* gf2m_tables)
 {
     /* Generate Goppa Code */
     gf L[PARAM_N] = {0, }; // Support Set L
@@ -208,14 +208,14 @@ void gen_key_pair(OUT u64* pk, OUT u64* sk, IN gf2m_tab* gf2m_tables)
     {
         if(cnt_remainder_u64 < idx_remainder_u64)
         {
-            sk[num] |= (((u64)L[i]) << (cnt_remainder_u64));
+            sk->L[num] |= (((u64)L[i]) << (cnt_remainder_u64));
             cnt_remainder_u64 += Param_M;
         }
         else
         {
             tmp = L[i] & ((1 << (64 - cnt_remainder_u64)) - 1);
-            sk[num] |= tmp << (cnt_remainder_u64);
-            sk[num + 1] |= (L[i] >> (64 - cnt_remainder_u64));
+            sk->L[num] |= tmp << (cnt_remainder_u64);
+            sk->L[num + 1] |= (L[i] >> (64 - cnt_remainder_u64));
             num ++;
             cnt_remainder_u64 -= idx_remainder_u64;
         }
@@ -225,31 +225,30 @@ void gen_key_pair(OUT u64* pk, OUT u64* sk, IN gf2m_tab* gf2m_tables)
     for(int i = 0; i <= PARAM_T; i++)
     {
         if(cnt_remainder_u64 < idx_remainder_u64){
-            sk[num] |= (((u64)g_X[i]) << (cnt_remainder_u64));
+            sk->g_X[num] |= (((u64)g_X[i]) << (cnt_remainder_u64));
             cnt_remainder_u64 += Param_M;
         }
         else
         {
             u64 temp = g_X[i] & ((1 << (64 - cnt_remainder_u64)) - 1);
-            sk[num] |= temp << (cnt_remainder_u64);
-            sk[num + 1] |= (g_X[i] >> (64 - cnt_remainder_u64));
+            sk->g_X[num] |= temp << (cnt_remainder_u64);
+            sk->g_X[num + 1] |= (g_X[i] >> (64 - cnt_remainder_u64));
             num ++;
             cnt_remainder_u64 -= idx_remainder_u64;
         }
     }
 
     /* S_inv : (n - k) * (n - k) = mt * mt */
-    memcpy(sk + num, S_inv, (sizeof(u64)) * (Param_M * PARAM_T) * (Param_M * PARAM_T) / 64);
-    int idx = (Param_M * PARAM_T) * (Param_M * PARAM_T) / 64;
+    memcpy(sk->S_inv, S_inv, (sizeof(u64)) * (Param_M * PARAM_T) * (Param_M * PARAM_T) / 64);
 
     /* r : 256-bit string*/
-    memcpy(sk + num + ((Param_M * PARAM_T) * (Param_M * PARAM_T) / 64), r4perm, (sizeof(u64) * 4));
+    memcpy(sk->r4perm, r4perm, (sizeof(u64) * 4));
     
     /* pk <- H_hat[n-k:n] (is the submatrix of H_hat consisting of the last k columns) */
     // memcpy(pk, H_hat, (sizeof(u64)) * (Param_M * n * t / 64));재
-    tmp = (13 * PARAM_T * (PARAM_N - 13 * PARAM_T) / 64);
+    tmp = (Param_M * PARAM_T * (PARAM_N - Param_M * PARAM_T) / 64);
     for(int i = 0; i < tmp; i++){
-        pk[i] = H[(13 * PARAM_T * 13 * PARAM_T) / 64 + i];
+        pk[i] = H[(Param_M * PARAM_T * Param_M * PARAM_T) / 64 + i];
     }    
 }
 

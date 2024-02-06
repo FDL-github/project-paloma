@@ -27,12 +27,6 @@ You are solely responsible for determining the appropriateness of using and dist
 #define KAT_DATA_ERROR      -3
 #define KAT_CRYPTO_FAILURE  -4
 
-#define MAX_CRYPTO_PUBLICKEYBYTES   1025024
-#define MAX_CRYPTO_SECRETKEYBYTES   357064
-#define MAX_CRYPTO_CIPHERTEXTBYTES  240
-#define MAX_CRYPTO_BYTES            32
-
-
 int		FindMarker(FILE *infile, const char *marker);
 int		ReadHex(FILE *infile, unsigned char *A, int Length, char *str);
 void	fprintBstr(FILE *fp, char *S, unsigned char *A, unsigned long long L);
@@ -44,10 +38,10 @@ main()
     FILE                *fp_req, *fp_rsp;
     unsigned char       seed[48];
     unsigned char       entropy_input[48];
-    unsigned char       ct[MAX_CRYPTO_CIPHERTEXTBYTES]={0,}, ss[MAX_CRYPTO_BYTES]={0,}, ss1[MAX_CRYPTO_BYTES]={0,};
+    unsigned char       ct[CIPHERTEXTBYTES] = {0, }, ss[CRYPTO_BYTES] = {0, }, ss1[CRYPTO_BYTES] = {0, };
     int                 count;
     int                 done;
-    unsigned char       pk[MAX_CRYPTO_PUBLICKEYBYTES]={0,}, sk[MAX_CRYPTO_SECRETKEYBYTES]={0,};
+    unsigned char       pk[PUBLICKEYBYTES] = {0, }, sk[SECRETKEYBYTES] = {0, };
     int                 ret_val;
     int                 freturn;
     
@@ -75,11 +69,8 @@ main()
 
     randombytes_init(entropy_input, NULL, 256);   
 
-    int repeat = 100;
-    // int repeat = 1;
-
-    // unsigned char *pk = 0;
-    // unsigned char *sk = 0;
+    // int repeat = 100;
+    int repeat = 1;
 
     for (int i=0; i<repeat; i++) {
         fprintf(fp_req, "count = %d\n", i); 
@@ -122,37 +113,11 @@ main()
         
         randombytes_init(seed, NULL, 256);                              
 
-        u64 sk64[SECRETKEYBYTES / 8] = {0, }; // L + g(X) + S + P 순서
-        u64 pk64[PUBLICKEYBYTES / 8] = {0, };                             // 서브행렬
-        
-        gen_key_pair(pk64, sk64, &table);
-        
-        for(int i=0; i< (PUBLICKEYBYTES / 8); i++){
-            for(int j=0;j<8;j++){
-                pk[8*i+j] = (pk64[i]>>(8*j))&0xff;
-            }
+        if ( (ret_val = crypto_kem_keypair(pk, sk, &table)) != 0) {              //수정해야함.
+            printf("crypto_kem_keypair returned <%d>\n", ret_val);
+            return KAT_CRYPTO_FAILURE;
         }
         
-        for(int i=0; i< (SECRETKEYBYTES / 8); i++){
-            for(int j=0;j<8;j++){
-                sk[8*i+j] = (sk64[i]>>(8*j))&0xff;
-            }
-        }
-
-        // gen_key_pair(pk, sk, &table);
-        
-        // for(int i=0; i< (PUBLICKEYBYTES / 8); i++){
-        //     for(int j=0;j<8;j++){
-        //         pk[8*i+j] = (pk64[i]>>(8*j))&0xff;
-        //     }
-        // }
-        
-        // for(int i=0; i< (SECRETKEYBYTES / 8); i++){
-        //     for(int j=0;j<8;j++){
-        //         sk[8*i+j] = (sk64[i]>>(8*j))&0xff;
-        //     }
-        // }
-
         // Generate the public/private keypair
         
         fprintBstr(fp_rsp, "pk = ", pk, CRYPTO_PUBLICKEYBYTES);
