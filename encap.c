@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 /**
 * @brief encrypt
 * @param [out] synd 신드롬
@@ -14,27 +13,19 @@
 */
 void encrypt(OUT u64* syndrome, IN u64* pk, IN u64* e)
 {
-    /* 항등행렬 부분 행렬곱 */
-    // for(int i = 0; i < (PARAM_N - PARAM_K) / 64; i++)
-    // {
-    //     synd[i]=e[i];                   // [I]e 계산.
-    // }   
+    /* 항등행렬 부분 행렬곱 */ 
     memcpy(syndrome, e, (sizeof(u64)) * ((PARAM_N - PARAM_K) / 64));
-
-    // u64 err_k[MAXN/64]={0,}; 
-    // for(int i=0;i<k/64;i++) err_k[i] = e[(n-k)/64+i];   //e의 하위 k비트 선택
 
     for(int i = 0; i < PARAM_K / 64; i++) 
     {
-        // err_k[i] = e[(PARAM_N - PARAM_K) / 64 + i];   //e의 하위 k비트 선택
-        // 이렇게 변경해도 되나?
         e[i] = e[(PARAM_N - PARAM_K) / 64 + i];   //e의 하위 k비트 선택
     }
 
-    u64 tmp[MAXN/64]={0,};
+    u64 tmp[PARAM_N / 64] = {0, };
     /* [M] X e_j */
-    matXvec(tmp, pk, e,(PARAM_N - PARAM_K), PARAM_K);       // [M] e_j 계산.    
-
+    // matXvec(tmp, pk, err_k,(PARAM_N - PARAM_K), PARAM_K);       // [M] e_j 계산.    
+    matXvec(tmp, pk, e, (PARAM_N - PARAM_K), PARAM_K);       // [M] e_j 계산.    
+    
     /* [I|M] X e_j */
     for(int i = 0; i < (PARAM_N - PARAM_K) / 64; i++)
     {
@@ -74,47 +65,86 @@ void encap(OUT u64* key, OUT u64* r_hat, OUT u64* s_hat, IN u64* pk)
     u64 r4errvec[4] = {0, };    
     gen_rand_sequence(r4errvec, 256);
 
+    // for (size_t i = 0; i < 4; i++)
+    // {
+    //     printf("%x ", r4errvec[i]);
+    // }
+    
     /* 해밍무게가 t인 랜덤 벡터 생성 */
-    u64 ep[MAXN/64]={0,};
-    u64 e_hat[MAXN/64]={0,};
+    u64 ep[PARAM_N / 64] = {0, };
+    u64 e_hat[PARAM_N / 64] = {0, };
 
     gen_rand_err_vec(ep, r4errvec);
+    
+    // for (size_t i = 0; i < PARAM_N / 64; i++)
+    // {
+    //     printf("%x ", ep[i]);
+    // }
+    
+    /* r = ROG(ep) */
+    int check = rand_oracle(r_hat, ep, PARAM_N, 1);
 
-    // /* r = ROG(ep) */
-    // int check = RandOracle(r, ep, n, 1);
+    // for (size_t i = 0; i < 4; i++)
+    // {
+    //     printf("%x ", r_hat[i]);
+    // }
 
-    // /* 생성한 난수로 임의의 P 생성. */
-    // gf permmatP[MAXN] = {0,};
+    /* 생성한 난수로 임의의 P 생성. */
+    gf perm_mat_P[PARAM_N] = {0,};
 
-    // GenRandPermMat(permmatP, n, r);
+    gen_rand_perm_mat(perm_mat_P, PARAM_N, r_hat);
 
-    // /* ep 치환 */ 
+    // for (size_t i = 0; i < PARAM_N; i++)
+    // {
+    //     printf("%x ", perm_mat_P[i]);
+    // }
+
+    /* ep 치환 */ 
+    memcpy(e_hat, ep, (sizeof(u64)) * PARAM_N / 64);
     // for(int i=0;i<n/64;i++) e_hat[i] = ep[i];
 
-    // u64 One = 1;
-    // for(int i=n-1;i>=0;i--){
-    //     if(((e_hat[i/64] >> (i%64))&1) != ((e_hat[permmatP[i]/64]>>(permmatP[i]%64))&1)){       // 두 비트가 다른 경우에만 ^1 해서 바꾸기. 
-    //         e_hat[i/64] ^= One<<(i%64);
-    //         e_hat[permmatP[i]/64] ^= (One<<(permmatP[i]%64));         //check
-    //     }
+    u64 One = 1;
+    for(int i = PARAM_N - 1; i >= 0; i--)
+    {
+        if(((e_hat[i / 64] >> (i % 64)) & 1) != ((e_hat[perm_mat_P[i]/64]>>(perm_mat_P[i]%64))&1))
+        {   // 두 비트가 다른 경우에만 ^1 해서 바꾸기. 
+            e_hat[i/64] ^= One<<(i%64);
+            e_hat[perm_mat_P[i]/64] ^= (One<<(perm_mat_P[i]%64));         //check
+        }
+    }
+
+    // for (size_t i = 0; i < (PARAM_N/64); i++)
+    // {
+    //     printf("%x ", e_hat[i]);
     // }
 
-    // /* encrypt */
-    // Encrypt(s_hat, pk, e_hat,n,k);
+    /* encrypt */
+    encrypt(s_hat, pk, e_hat);
 
-    // /* k = ROH(ep, rhat, shat) */
-    // u64 input[MAXN/64 + 4 + (13*MAXT)/64 ]={0,};
-
-    // for(int i=0;i<n/64;i++){
-    //     input[i] = ep[i];
-    // }
-    // for(int i=0; i<4;i++){
-    //     input[i+(n/64)] = r[i];
-    // }
-    // for(int i=0; i<(n-k)/64;i++){
-    //     input[i+4+(n/64)] = s_hat[i];
+    // for (size_t i = 0; i < (Param_M*PARAM_T/64); i++)
+    // {
+    //     printf("%x ", s_hat[i]);
     // }
 
-    // int check2 = RandOracle(key, input, n + 256 + (n-k), 2);
+    /* k = ROH(ep, rhat, shat) */
+    u64 input[(PARAM_N / 64) + 4 + (13 * PARAM_T)/64] = {0, };
+
+    // memcpy(input, ep, (sizeof(u64)) * PARAM_N / 64);
+
+    // memcpy(input + ((sizeof(u64)) * PARAM_N / 64), r4errvec, (sizeof(u64)) * 4);
+
+    // memcpy(input + ((sizeof(u64)) * PARAM_N / 64) + 4, s_hat, (sizeof(u64)) * (PARAM_N - PARAM_K)/64);
+
+    for(int i=0;i<PARAM_N/64;i++){
+        input[i] = ep[i];
+    }
+    for(int i=0; i<4;i++){
+        input[i+(PARAM_N/64)] = r_hat[i];
+    }
+    for(int i=0; i<(PARAM_N-PARAM_K)/64;i++){
+        input[i+4+(PARAM_N/64)] = s_hat[i];
+    }
+
+    int check2 = rand_oracle(key, input, PARAM_N + 256 + (PARAM_N - PARAM_K), 2);
 
 }

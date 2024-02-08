@@ -19,7 +19,8 @@
 * @param colnum  입력 행렬의 열 개수 (입력 벡터의 길이)
 * @param out_vec 출력 벡터
 */
-void matXvec(OUT u64* out_vec, IN u64* in_mat, IN u64* in_vec, IN int rownum, IN int colnum){ // 모든 64 비트는 열단위.
+void matXvec(OUT u64* out_vec, IN u64* in_mat, IN u64* in_vec, IN int rownum, IN int colnum)
+{ // 모든 64 비트는 열단위.
     // out_vec의 모든 값은 0으로 채워져서 들어옴.
     int num_of_64bits_in_row = rownum >> 6; // 행에 몇개의 u64가 있는지 계산..
     int col_index;
@@ -34,7 +35,7 @@ void matXvec(OUT u64* out_vec, IN u64* in_mat, IN u64* in_vec, IN int rownum, IN
             // 즉 num_of_64bits_in_row 만큼 연산 돌려야 함. 
             for(int j = 0; j < num_of_64bits_in_row; j++) 
                 out_vec[j] ^= in_mat[col_index + j]; // in_mat에서각 u64 행의 r_0랑 연신헤야 하는 값 모두랑 연산 돌림.
-           
+            // 36-37라인만 함수로 분리
         }
     }
 }

@@ -69,8 +69,8 @@ main()
 
     randombytes_init(entropy_input, NULL, 256);   
 
-    // int repeat = 100;
-    int repeat = 1;
+    int repeat = 100;
+    // int repeat = 1;
 
     for (int i=0; i<repeat; i++) {
         fprintf(fp_req, "count = %d\n", i); 
@@ -123,12 +123,12 @@ main()
         fprintBstr(fp_rsp, "pk = ", pk, CRYPTO_PUBLICKEYBYTES);
         fprintBstr(fp_rsp, "sk = ", sk, CRYPTO_SECRETKEYBYTES);
         
-        // if ( (ret_val = crypto_PALOMA_enc(ct, ss, pk,&table)) != 0) {          //수정해야함.
-        //     printf("crypto_kem_enc returned <%d>\n", ret_val);
-        //     return KAT_CRYPTO_FAILURE;
-        // }
-        // fprintBstr(fp_rsp, "ct = ", ct, CRYPTO_CIPHERTEXTBYTES);
-        // fprintBstr(fp_rsp, "ss = ", ss, CRYPTO_BYTES);
+        if ( (ret_val = crypto_kem_enc(ct, ss, pk)) != 0) {          //수정해야함.
+            printf("crypto_kem_enc returned <%d>\n", ret_val);
+            return KAT_CRYPTO_FAILURE;
+        }
+        fprintBstr(fp_rsp, "ct = ", ct, CRYPTO_CIPHERTEXTBYTES);
+        fprintBstr(fp_rsp, "ss = ", ss, CRYPTO_BYTES);
         
         fprintf(fp_rsp, "\n");
         
