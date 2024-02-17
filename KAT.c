@@ -1,5 +1,3 @@
-/* 검증용 테스트 KAT 파일 추후 수정 예정 */
-
 /*
 NIST-developed software is provided by NIST as a public service. You may use, copy, and distribute copies of the software in any medium, provided that you keep intact this entire notice. You may improve, modify, and create derivative works of the software or any portion of the software, and you may copy and distribute such modifications or works. Modified works should carry a notice stating that you changed the software and should note the date and nature of any such change. Please explicitly acknowledge the National Institute of Standards and Technology as the source of the software.
  
@@ -8,18 +6,19 @@ NIST-developed software is expressly provided "AS IS." NIST MAKES NO WARRANTY OF
 You are solely responsible for determining the appropriateness of using and distributing the software and you assume all risks associated with its use, including but not limited to the risks and costs of program errors, compliance with applicable laws, damage to or loss of data, programs or equipment, and the unavailability or interruption of operation. This software is not intended to be used in any situation where a failure could cause risk of injury or damage to property. The software developed by NIST employees is not subject to copyright protection within the United States.
 */
 
-// gcc -Wl,-stack_size -Wl,0x20000000 -O2 gf_table_gen.c gf.c gfpoly.c goppa_instance.c keygen.c mat_mul.c common.c lsh.c lsh512.c encap.c decap.c paloma.c rng.c kat.c
+// -----------------------------------------------------------------------------------------------------------------------
+// compile command
+// gcc -O2 -I/opt/homebrew/Cellar/openssl@3/3.2.0_1/include -L/opt/homebrew/Cellar/openssl@3/3.2.0_1/lib gf_tab_gen.c gf.c gf_poly.c goppa_instance.c key_gen.c mat_mul.c common.c decoding.c decrypt.c lsh.c lsh512.c rng.c encrypt.c encap.c decap.c PALOMA.c KAT.c -lcrypto
+// -----------------------------------------------------------------------------------------------------------------------
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include "rng.h"
 #include "api.h"
 #include "gf_tab_gen.h"
-
-#include "key_gen.h"
-#include <time.h>
 
 #define	MAX_MARKER_LEN		50
 #define KAT_SUCCESS          0
@@ -30,6 +29,13 @@ You are solely responsible for determining the appropriateness of using and dist
 int		FindMarker(FILE *infile, const char *marker);
 int		ReadHex(FILE *infile, unsigned char *A, int Length, char *str);
 void	fprintBstr(FILE *fp, char *S, unsigned char *A, unsigned long long L);
+
+// Function to read the cycle counter
+static inline uint64_t read_cycle_counter() {
+    uint64_t result;
+    asm volatile("mrs %0, cntvct_el0" : "=r"(result));
+    return result;
+}
 
 int
 main()
@@ -45,11 +51,8 @@ main()
     int                 ret_val;
     int                 freturn;
     
-    /*
-        유한체 연산 사전 계산 테이블 생성 및 속도 측정, 검증
-    */
     gf2m_tab table;
-    // 사전 계산 테이블 생성
+    /* generate precomputation table */
     gen_precomputation_tab(&table);
 
     // Create the REQUEST file
@@ -69,8 +72,7 @@ main()
 
     randombytes_init(entropy_input, NULL, 256);   
 
-    int repeat = 100;
-    // int repeat = 1;
+    int repeat = 50;
 
     for (int i=0; i<repeat; i++) {
         fprintf(fp_req, "count = %d\n", i); 
@@ -92,10 +94,11 @@ main()
     fprintf(fp_rsp, "# %s\n\n", CRYPTO_ALGNAME);
     done = 0;
     do {
-        // if (!pk) pk = malloc(PUBLICKEYBYTES);
-        // if (!pk) abort();
-        // if (!sk) sk = malloc(SECRETKEYBYTES);
-        // if (!sk) abort();
+        memset(pk, 0, PUBLICKEYBYTES);
+        memset(sk, 0, SECRETKEYBYTES);
+        memset(ct, 0, CIPHERTEXTBYTES);
+        memset(ss, 0, CRYPTO_BYTES);
+        memset(ss1, 0, CRYPTO_BYTES);
 
         if ( FindMarker(fp_req, "count = ") )
             freturn = fscanf(fp_req, "%d", &count);
@@ -112,45 +115,43 @@ main()
         fprintBstr(fp_rsp, "seed = ", seed, 48);
         
         randombytes_init(seed, NULL, 256);                              
-
-        if ( (ret_val = crypto_kem_keypair(pk, sk, &table)) != 0) {              //수정해야함.
+        
+        if ( (ret_val = crypto_kem_keypair(pk, sk, &table)) != 0) 
+        {
             printf("crypto_kem_keypair returned <%d>\n", ret_val);
             return KAT_CRYPTO_FAILURE;
         }
         
-        // Generate the public/private keypair
-        
         fprintBstr(fp_rsp, "pk = ", pk, CRYPTO_PUBLICKEYBYTES);
         fprintBstr(fp_rsp, "sk = ", sk, CRYPTO_SECRETKEYBYTES);
         
-        if ( (ret_val = crypto_kem_enc(ct, ss, pk)) != 0) {          //수정해야함.
+        if ( (ret_val = crypto_kem_enc(ct, ss, pk)) != 0) {          
             printf("crypto_kem_enc returned <%d>\n", ret_val);
             return KAT_CRYPTO_FAILURE;
         }
+
         fprintBstr(fp_rsp, "ct = ", ct, CRYPTO_CIPHERTEXTBYTES);
         fprintBstr(fp_rsp, "ss = ", ss, CRYPTO_BYTES);
         
         fprintf(fp_rsp, "\n");
         
-        // if ( (ret_val = crypto_PALOMA_dec(ss1, ct, sk,&table)) != 0) {             //수정해야함.
-        //     printf("crypto_kem_dec returned <%d>\n", ret_val);
-        //     return KAT_CRYPTO_FAILURE;
-        // }
-        
-        // if ( memcmp(ss, ss1, CRYPTO_BYTES) ) {
-        //     printf("crypto_kem_dec returned bad 'ss' value\n");
-        //     return KAT_CRYPTO_FAILURE;
-        // }
+        if ( (ret_val = crypto_kem_dec(ss1, ct, sk, &table)) != 0) {             
+            printf("crypto_kem_dec returned <%d>\n", ret_val);
+            return KAT_CRYPTO_FAILURE;
+        }
+
+        if ( memcmp(ss, ss1, CRYPTO_BYTES) ) {
+            printf("crypto_kem_dec returned bad 'ss' value\n");
+            return KAT_CRYPTO_FAILURE;
+        }
 
     } while ( !done );
-    
+
     fclose(fp_req);
     fclose(fp_rsp);
 
     return KAT_SUCCESS;
 }
-
-
 
 //
 // ALLOW TO READ HEXADECIMAL ENTRY (KEYS, DATA, TEXT, etc.)

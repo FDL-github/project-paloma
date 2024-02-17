@@ -35,6 +35,7 @@ lsh_err lsh_init(union LSH_Context * state, const lsh_type algtype){
 		return LSH_ERR_INVALID_ALGTYPE;
 	}
 }
+
 lsh_err lsh_update(union LSH_Context * state, const lsh_u8 * data, size_t databitlen){
 	if (state == NULL){
 		return LSH_ERR_NULL_PTR;
@@ -44,6 +45,7 @@ lsh_err lsh_update(union LSH_Context * state, const lsh_u8 * data, size_t databi
 	return lsh512_update(&state->ctx512, data, databitlen);
 	
 }
+
 lsh_err lsh_final(union LSH_Context * state, lsh_u8 * hashval){
 	if (state == NULL){
 		return LSH_ERR_NULL_PTR;

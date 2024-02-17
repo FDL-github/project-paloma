@@ -20,26 +20,28 @@
  * THE SOFTWARE.
  */
 
-#ifndef GF_TABLE_GEN_H
-#define GF_TABLE_GEN_H
+/*
+안녕..
+*/
+
+#ifndef DECODING_H_
+#define DECODING_H_
 
 #include "config.h"
 #include "gf.h"
+#include "gf_poly.h"
+#include "mat_mul.h"
+#include "common.h"
+#include "key_gen.h"
+#include "encap.h"
+#include "bench.h"
 
-void print_all_tab(IN const gf2m_tab *gf2m_tables);
-void gen_precomputation_tab(OUT gf2m_tab *gf2m_tables);
+void to_poly(OUT gf *poly, IN const Word *vec, IN int deg);
+void construct_key_equ(OUT gf *vX, OUT gf *g1X, OUT gf *g2X, OUT gf *g12X, IN const gf *sX, IN const gf *gX, IN const gf2m_tab *gf2m_tables);
+void solve_key_equ(OUT gf *a1X, OUT gf *b2X, IN const gf *vX, IN const gf *g12X, IN int deg_a, IN int deg_b, IN const gf2m_tab *gf2m_tables);
+void get_err_loc_poly(OUT gf *sigX, IN const gf *a2X, IN const gf *g2X, IN const gf *b2X, IN const gf *g1X, IN const gf2m_tab *gf2m_tables);
+void find_err_vec(OUT Word *err_vec, IN const gf *sigX, IN const gf *L, IN const gf2m_tab *gf2m_tables);
 
-void gen_mul_tab(OUT gf2m_tab *gf2m_tables);
-void gen_square_tab(OUT gf *square_tab);
-void gen_sqrt_tab(OUT gf *sqrt_tab);
-void gen_inv_tab(OUT gf *inv_tab);
-
-void print_mul_tab(IN const gf2m_tab *gf2m_tables);
-void print_square_tab(IN const gf *square_tab);
-void print_sqrt_tab(IN const gf *sqrt_tab);
-void print_inv_tab(IN const gf *inv_tab);
-
-void gf2m_performance(IN const gf2m_tab *gf2m_tables);
-void tab_verify_check(IN const gf2m_tab *gf2m_tables);
+void rec_err_vec(OUT Word *err_vec, IN const SecretKey *sk, IN const Word *synd_vec, IN const gf2m_tab *gf2m_tables);
 
 #endif

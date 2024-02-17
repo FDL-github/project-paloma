@@ -20,26 +20,13 @@
  * THE SOFTWARE.
  */
 
-#ifndef GF_TABLE_GEN_H
-#define GF_TABLE_GEN_H
+#ifndef DECAP_H
+#define DECAP_H
 
-#include "config.h"
-#include "gf.h"
+#include "decrypt.h"
 
-void print_all_tab(IN const gf2m_tab *gf2m_tables);
-void gen_precomputation_tab(OUT gf2m_tab *gf2m_tables);
+int check_err_vec(IN const Word *err_vec);
 
-void gen_mul_tab(OUT gf2m_tab *gf2m_tables);
-void gen_square_tab(OUT gf *square_tab);
-void gen_sqrt_tab(OUT gf *sqrt_tab);
-void gen_inv_tab(OUT gf *inv_tab);
-
-void print_mul_tab(IN const gf2m_tab *gf2m_tables);
-void print_square_tab(IN const gf *square_tab);
-void print_sqrt_tab(IN const gf *sqrt_tab);
-void print_inv_tab(IN const gf *inv_tab);
-
-void gf2m_performance(IN const gf2m_tab *gf2m_tables);
-void tab_verify_check(IN const gf2m_tab *gf2m_tables);
+void decap(OUT Word *key, IN const SecretKey *sk, IN const Word *r_hat, IN const Word *s_hat, IN const gf2m_tab *gf2m_tables);
 
 #endif

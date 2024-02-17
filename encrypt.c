@@ -20,26 +20,35 @@
  * THE SOFTWARE.
  */
 
-#ifndef GF_TABLE_GEN_H
-#define GF_TABLE_GEN_H
+#include "encrypt.h"
 
-#include "config.h"
-#include "gf.h"
+/**
+ * @brief Encryption
+ *
+ * @param [out] synd_vec syndrome vector
+ * @param [in] pk : public key
+ * @param [in] err_vec : error vector
+ */
+void encrypt(OUT Word *synd_vec, IN const PublicKey *pk, IN const Word *err_vec)
+{
+    Word err_vec_t[PARAM_N_WORDS] = {0};
 
-void print_all_tab(IN const gf2m_tab *gf2m_tables);
-void gen_precomputation_tab(OUT gf2m_tab *gf2m_tables);
+    /* 항등행렬 부분 행렬곱 */
+    memcpy(synd_vec, err_vec, (sizeof(Word)) * SYND_WORDS);
 
-void gen_mul_tab(OUT gf2m_tab *gf2m_tables);
-void gen_square_tab(OUT gf *square_tab);
-void gen_sqrt_tab(OUT gf *sqrt_tab);
-void gen_inv_tab(OUT gf *inv_tab);
+    for (int i = 0; i < PARAM_K_WORDS; i++)
+    {
+        err_vec_t[i] = err_vec[SYND_WORDS + i];
+    }
 
-void print_mul_tab(IN const gf2m_tab *gf2m_tables);
-void print_square_tab(IN const gf *square_tab);
-void print_sqrt_tab(IN const gf *sqrt_tab);
-void print_inv_tab(IN const gf *inv_tab);
+    Word tmp[PARAM_N_WORDS] = {0};
 
-void gf2m_performance(IN const gf2m_tab *gf2m_tables);
-void tab_verify_check(IN const gf2m_tab *gf2m_tables);
+    /* [M] X e_j */
+    matXvec(tmp, (pk)->H, err_vec_t, SYND_BITS, PARAM_K);
 
-#endif
+    /* [I|M] X e_j */
+    for (int i = 0; i < SYND_WORDS; i++)
+    {
+        synd_vec[i] ^= tmp[i];
+    }
+}

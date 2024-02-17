@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 FDL(Future cryptography Design Lab.) Kookmin University
+ * Copyright (c) 2024 FDL(Future cryptography Design Lab.) Kookmin University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,27 +23,21 @@
 #ifndef GF_POLY_H
 #define GF_POLY_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "config.h"
 #include "gf.h"
 
-int gf_poly_get_degree(gf *ax);
-void gf_poly_copy(gf *cx, gf *ax);
+int gf_poly_get_degree(IN const gf *aX);
+void gf_poly_copy(OUT gf *cX, IN const gf *aX);
+void gf_poly_change_monic(OUT gf *cX, IN const gf *aX, IN const gf2m_tab *gf2m_tables);
 
-void gf_poly_add(OUT gf *cx, IN gf *ax, IN gf *bx);
-void poly_mul(OUT gf *cx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables);
-void gf_poly_mul(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables);
-void gf_poly_sqr(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf2m_tab *gf2m_tables);
-void gf_poly_sqrt(OUT gf *cx, IN gf *gx, IN gf *ax, IN gf2m_tab *gf2m_tables);
-void gf_poly_div(OUT gf *qx, OUT gf *rx, IN gf *a, IN gf *b, IN gf2m_tab *gf2m_tables);
-void gf_poly_inv(OUT gf *cx, IN gf *ax, IN gf *gx, IN gf2m_tab *gf2m_tables);
-
-gf gf_poly_eval(IN gf *ax, IN gf gfa, IN gf2m_tab *gf2m_tables);
-void gf_poly_gcd(OUT gf *cx, IN gf *ax, IN gf *bx, IN gf2m_tab *gf2m_tables);
-
-void gf_poly_print(IN gf *ax);
-void gf_poly_verify(IN gf *gx, IN gf2m_tab *gf2m_tables);
+void gf_poly_add(OUT gf *cX, IN const gf *aX, IN const gf *bX);
+void poly_mul(OUT gf *cX, IN const gf *aX, IN const gf *bX, IN const gf2m_tab *gf2m_tables);
+void gf_poly_mul(OUT gf *cX, IN const gf *aX, IN const gf *bX, IN const gf *gX, IN const gf2m_tab *gf2m_tables);
+void gf_poly_sqr(OUT gf *cX, IN const gf *aX, IN const gf *gX, IN const gf2m_tab *gf2m_tables);
+void gf_poly_sqrt(OUT gf *cX, IN const gf *aX, IN const gf *gX, IN const gf2m_tab *gf2m_tables);
+void gf_poly_div(OUT gf *qx, OUT gf *rx, IN const gf *aX, IN const gf *bX, IN const gf2m_tab *gf2m_tables);
+void gf_poly_inv(OUT gf *cX, IN const gf *aX, IN const gf *gX, IN const gf2m_tab *gf2m_tables);
+gf gf_poly_eval(IN const gf *aX, IN gf gf_a, IN const gf2m_tab *gf2m_tables);
+void gf_poly_gcd(OUT gf *cX, IN const gf *aX, IN const gf *bX, IN const gf2m_tab *gf2m_tables);
 
 #endif

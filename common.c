@@ -1,53 +1,55 @@
-#include "common.h"
-#include <stdio.h>
-#include <time.h>
-#include "include/lsh.h"
-#include "lsh512.h"
-#include "lsh_local.h"
-#include "rng.h"
-#include "include/lsh_def.h"
-#include "gf.h"
+/*
+ * Copyright (c) 2024 FDL(Future cryptography Design Lab.) Kookmin University
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
+#include "common.h"
 
 /**
-* @brief _256bits_seed_r 이용 하여 원소가 set_len개인 집합 셔플 
-* @brief _256bits_seed_r = [64비트][64비트][64비트][64비트] .. 64비트 * 4
-* @param set_len 집합 길이. paloma에서는 n으로만 들어옴. 따라서 매개변수 수정해도 됨.
-* @param _256bits_seed_r 256비트 시드 r
-* @param shuffled_set 셔플 결과                       
-*/
-void shuffle(OUT gf* shuffled_set, IN int set_len, IN u64* _256bits_seed_r){  //원소 n개 짜리 집합을 난수 r 이용 하여 셔플
-    
+ * @brief PALOMA SHUFFLE : Shuffle with 256-bit seed r
+ *
+ * @param [out] shuffled_set
+ * @param [in] set_len Set length.
+ * @param [in] _256bits_seed_r 256-bit seed r
+ */
+void shuffle(OUT gf *shuffled_set, IN int set_len, IN const Word *_256bits_seed_r)
+{
     int i, j;
     int w = 0;
     gf seed[16];
     gf tmp;
 
-    /* [0,1,...,n-1] 집합 생성 */
-    for(i = 0; i < set_len; i++)
+    /* Generate [0,1,...,n-1] set */
+    for (i = 0; i < set_len; i++)
     {
         shuffled_set[i] = i;
     }
 
-    /* seed 16-bit씩 분리 */    
-    seed[0] = (_256bits_seed_r[0]) & 0xffff;         seed[1] = (_256bits_seed_r[0] >> 16) & 0xffff;    
-    seed[2] = (_256bits_seed_r[0] >> 32) & 0xffff;   seed[3] = (_256bits_seed_r[0] >> 48) & 0xffff;
-    
-    seed[4] = (_256bits_seed_r[1]) & 0xffff;         seed[5] = (_256bits_seed_r[1] >> 16) & 0xffff;    
-    seed[6] = (_256bits_seed_r[1] >> 32) & 0xffff;   seed[7] = (_256bits_seed_r[1] >> 48) & 0xffff;
-    
-    seed[8] = (_256bits_seed_r[2]) & 0xffff;         seed[9] = (_256bits_seed_r[2] >> 16) & 0xffff;    
-    seed[10] = (_256bits_seed_r[2] >> 32) & 0xffff;  seed[11] = (_256bits_seed_r[2] >> 48) & 0xffff;
-    
-    seed[12] = (_256bits_seed_r[3]) & 0xffff;        seed[13] = (_256bits_seed_r[3] >> 16) & 0xffff;    
-    seed[14] = (_256bits_seed_r[3] >> 32) & 0xffff;  seed[15] = (_256bits_seed_r[3] >> 48) & 0xffff;
+    /* Separate seeds by 16-bit */
+    memcpy(seed, _256bits_seed_r, SEED_BYTES);
 
-    /* shuffling */
-    for(i = set_len - 1; i > 0; i--)
+    /* Shuffling */
+    for (i = set_len - 1; i > 0; i--)
     {
-        j = ((seed[w % 16]) % (i + 1));   
-        
-        /* swap */          
+        j = ((seed[w % 16]) % (i + 1));
+        /* Swap */
         tmp = shuffled_set[j];
         shuffled_set[j] = shuffled_set[i];
         shuffled_set[i] = tmp;
@@ -57,77 +59,80 @@ void shuffle(OUT gf* shuffled_set, IN int set_len, IN u64* _256bits_seed_r){  //
 }
 
 /**
-* @brief 길이가 sequence_len 비트인 난수열 생성
-* @param sequence_len 난수열 비트 길이
-* @param out_vec 난수열
-*/
-void gen_rand_sequence(OUT u64* rand_sequence, IN int sequence_len)
-{   
-    
+ * @brief Function to generate random sequence
+ *
+ * @param [out] out_vec Random sequence
+ * @param [in] sequence_len Bit length of random sequence
+ */
+void gen_rand_sequence(OUT Word *rand_sequence, IN int sequence_len)
+{
     unsigned char seed[1];
-    for(int i = 0; i < (sequence_len / 64); i++)  // 64 : bit size of u64
+
+    for (int i = 0; i < (sequence_len / WORD_BITS); i++) // WORD_BITS : bit size of Word
     {
         rand_sequence[i] = 0;
 
-        for(int j = 0; j < 8; j++) // 8 : bit size of u64 / 8
+        for (int j = 0; j < WORD_BYTES; j++) // WORD_BYTES : bit size of Word / WORD_BYTES
         {
-            // seed[0] = (u8)rand(); // 이 부분 지우면 됨
-
-            randombytes(seed, 1);  // 8비트 짜리 문자열 1개 나옴   // rng.h
-            u64 rand_k = seed[0] & 0xff;   // 8비트 짜리 문자열 1개 나옴
-            rand_sequence[i] |= (rand_k << (8 * (7 - j)));
+            randombytes(seed, 1);
+            Word rand_k = seed[0] & 0xff;
+            rand_sequence[i] |= (rand_k << (WORD_BYTES * (WORD_BYTES - 1 - j)));
         }
     }
 }
 
 /**
-* @brief encap, decap 과정에서 사용하는 랜덤오라클
-* @param msg: 오라클 입력 데이터
-* @param msg_len: 오라클 입력 데이터의 비트 길이.
-* @param oracle_num: 1 인경우 oracle G, 2인 경우 oracle H 사용
-* @param seed: oracle 결과 (해시값)
-*/
-int rand_oracle(OUT u64* seed, IN u64* msg, IN int msg_len, IN int oracle_num)
-{ 		  
-	// LSH512을 사용하고, 출력 해시 길이를 512비트로 설정 */
-	lsh_type algtype = LSH_MAKE_TYPE(1, 512);  
+ * @brief Random Oracle
+ *
+ * @param [in] msg: Oracle input data
+ * @param [in] msg_len: Bit length of oracle input data
+ * @param [in] oracle_num: 1 : oracle G, 2 : oracle H
+ * @param [out] seed: Oracle result
+ */
+int rand_oracle(OUT Word *seed, IN const Word *msg, IN int msg_len, IN int oracle_num)
+{
+    /* Use LSH-512, output length : 512-bit */
+    lsh_type algtype = LSH_MAKE_TYPE(1, 512);
+    lsh_u8 src[WORD_BYTES + (msg_len / WORD_BYTES)];
 
-	// 입력 데이터앞으로 8byte 문자열이 추가되므로 8을 추가한 만큼 길이로 배열 생성
-	lsh_u8 src[8 + (msg_len / 8)];
+    /* Generate oracle input data */
+    /* PALOMAGG or PALOMAHH ASCII value*/
+    src[0] = 0x50;
+    src[1] = 0x41;
+    src[2] = 0x4c;
+    src[3] = 0x4f;
+    src[4] = 0x4d;
+    src[5] = 0x41;
 
-    /* oracle 입력 데이터 생성 */
-    /* PALOMAGG or PALOMAHH ASCII 값*/
-    src[0] = 0x50;   src[1] = 0x41;   src[2] = 0x4c;
-    src[3] = 0x4f;   src[4] = 0x4d;   src[5] = 0x41;
-
-    if(oracle_num == 1)
+    if (oracle_num == 1)
     {
-        src[6] = 0x47;   src[7] = 0x47;
+        src[6] = 0x47;
+        src[7] = 0x47;
     }
-    else if(oracle_num == 2)
+    else if (oracle_num == 2)
     {
-        src[6] = 0x48;   src[7] = 0x48;
+        src[6] = 0x48;
+        src[7] = 0x48;
     }
     else
     {
         return -1;
     }
-    /* 입력받은 데이터 */
-    for(int i = 0; i < (msg_len / 8); i++) 
+    /* input data */
+    for (int i = 0; i < (msg_len / WORD_BYTES); i++)
     {
-        src[8 + i] = (msg[i / 8] >> ((8 * i) % 64)) & 0xff;
+        src[WORD_BYTES + i] = (msg[i / WORD_BYTES] >> ((WORD_BYTES * i) % WORD_BITS)) & 0xff;
     }
-	
-    // 출력 해시값을 512비트(512/8=64바이트) 변수 result에 저장
-	lsh_u8 result[64] = {0, };
 
-    /* 해시값 생성 */
-	lsh_digest(algtype, src, 64 + msg_len, result);
+    /* Store output hash values */
+    lsh_u8 result[512 / 8] = {0};
 
-    /* 해시값 출력 */
-    for(int i = 0; i < 32; i++)
+    /* Generate hash values */
+    lsh_digest(algtype, src, WORD_BITS + msg_len, result);
+
+    for (int i = 0; i < 32; i++)
     {
-        seed[i / 8] |= ((u64)result[i] << ((i * 8) % 64));
+        seed[i / WORD_BYTES] |= ((Word)result[i] << ((i * WORD_BYTES) % WORD_BITS));
     }
 
     return 0;

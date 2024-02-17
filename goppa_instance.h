@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 FDL(Future cryptography Design Lab.) Kookmin University
+ * Copyright (c) 2024 FDL(Future cryptography Design Lab.) Kookmin University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,6 @@
 
 #include "gf.h"
 
-void gen_goppa_poly(OUT gf *gx, IN gf *gf_set, IN gf2m_tab *gf2m_tables);
-
-void gen_random_elements_of_gf2m(OUT gf *subSet, IN int x);
+void gen_goppa_poly(OUT gf *gx, IN const gf *gf_set, IN const gf2m_tab *gf2m_tables);
 
 #endif

@@ -20,26 +20,37 @@
  * THE SOFTWARE.
  */
 
-#ifndef GF_TABLE_GEN_H
-#define GF_TABLE_GEN_H
+#include "decrypt.h"
+/**
+ * @brief Decryption
+ *
+ * @param [out] e_hat Error vector hat.
+ * @param [in] sk Secret key.
+ * @param [in] s_hat Syndrome vector hat.
+ * @param [in] gf2m_tables GF(2^m) operation tables.
+ */
+void decrypt(OUT Word *e_hat, IN const SecretKey *sk, IN const Word *s_hat, IN const gf2m_tab *gf2m_tables)
+{
+    Word synd_vec[SYND_WORDS] = {0};
+    Word err_vec[PARAM_N_WORDS] = {0};
+    gf P[PARAM_N] = {0};
+    gf P_inv[PARAM_N] = {0};
+    const Word one = 1;
 
-#include "config.h"
-#include "gf.h"
+    /* s = S^{-1} * s_hat */
+    matXvec(synd_vec, sk->S_inv, s_hat, SYND_BITS, SYND_BITS);
 
-void print_all_tab(IN const gf2m_tab *gf2m_tables);
-void gen_precomputation_tab(OUT gf2m_tab *gf2m_tables);
+    /* Recover the error vector (using extended Patterson decoding) */
+    rec_err_vec(err_vec, sk, synd_vec, gf2m_tables);
 
-void gen_mul_tab(OUT gf2m_tab *gf2m_tables);
-void gen_square_tab(OUT gf *square_tab);
-void gen_sqrt_tab(OUT gf *sqrt_tab);
-void gen_inv_tab(OUT gf *inv_tab);
+    /* Generate the permutation matrix */
+    gen_rand_perm_mat(P, P_inv, PARAM_N, sk->r);
 
-void print_mul_tab(IN const gf2m_tab *gf2m_tables);
-void print_square_tab(IN const gf *square_tab);
-void print_sqrt_tab(IN const gf *sqrt_tab);
-void print_inv_tab(IN const gf *inv_tab);
-
-void gf2m_performance(IN const gf2m_tab *gf2m_tables);
-void tab_verify_check(IN const gf2m_tab *gf2m_tables);
-
-#endif
+    /* Compute e_hat = P^{−1} * e */
+    memset(e_hat, 0, (sizeof(Word)) * PARAM_N_WORDS);
+    for (size_t i = 0; i < PARAM_N; i++)
+    {
+        Word bit = ((err_vec[P_inv[i] / WORD_BITS] >> (P_inv[i] % WORD_BITS)) & 1);
+        e_hat[i / WORD_BITS] ^= bit << (i % WORD_BITS);
+    }
+}

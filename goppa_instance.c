@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 FDL(Future cryptography Design Lab.) Kookmin University
+ * Copyright (c) 2024 FDL(Future cryptography Design Lab.) Kookmin University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,91 +21,42 @@
  */
 
 #include "goppa_instance.h"
-#include <stdlib.h>
-#include <stdio.h>
-//! #include "rng.h" //! 난수생성기 만들기 전에 잠시 봉인.
-#include <time.h>
 
 /**
  * @brief generate goppa polynomial (x-a_1)(x-a_2)...(x-a_t).
  *
- * @param gx goppa polynomial.
- * @param gf_set number t GF(2^m) elements.
- * @param gf2m_tables tables for efficient arithmetic over GF(2^m).
+ * @param [out] gx goppa polynomial.
+ * @param [in] gf_set number t GF(2^m) elements.
+ * @param [in] gf2m_tables tables for efficient arithmetic over GF(2^m).
  */
-void gen_goppa_poly(OUT gf *gx, IN gf *gf_set, IN gf2m_tab *gf2m_tables)
+void gen_goppa_poly(OUT gf *gx, IN const gf *gf_set, IN const gf2m_tab *gf2m_tables)
 {
-    gf t_gx[PARAM_T + 1] = {0};
-    gf tx[PARAM_T + 1] = {0};
+    gf t_gx[GF_POLY_LEN] = {0}; // gx_temp
+    gf temp_result[GF_POLY_LEN] = {0};
 
-    // init: set g(x) = x - a_0
+    /* init: set g(X) = (X - a_0) */
     t_gx[0] = gf_set[0];
     t_gx[1] = 1;
 
-    // compute (x - a_t) * ... * (x - a_1) * (x - a_0)
+    /* compute (X - a_{t-1}) * ... * (X - a_1) * (X - a_0) */
     for (int i = 1; i < PARAM_T; i++)
     {
-        // multiplicate g(x) with (x - a_i)
+        /* multiplicate g(X) with (X - a_i) */
         for (int j = 0; j <= i; j++)
         {
-            tx[j + 1] = t_gx[j];                                      // t(x) = g(x) * x
-            tx[j] ^= gf2m_mul_w_tab(t_gx[j], gf_set[i], gf2m_tables); // t(x) = g(x) * x + g(x) * a_i = g(x) * (x - a_i)
-            t_gx[j] = tx[j];                                          // new g(x) = t(x)
+            temp_result[j + 1] = t_gx[j];                                      // t(x) = g(x) * x
+            temp_result[j] ^= gf2m_mul_w_tab(t_gx[j], gf_set[i], gf2m_tables); // t(x) = g(x) * x + g(x) * a_i = g(x) * (x - a_i)
+            t_gx[j] = temp_result[j];                                          // new g(x) = t(x)
         }
 
-        // final compute
-        t_gx[i + 1] = tx[i + 1];
+        /* final compute */
+        t_gx[i + 1] = temp_result[i + 1];
 
-        // set zero
-        tx[0] = 0;
+        /* set zero */
+        temp_result[0] = 0;
     }
 
-    // return
-    for (int i = 0; i <= PARAM_T; i++)
+    /* return */
+    for (int i = 0; i < PARAM_T; i++)
         gx[i] = t_gx[i];
-}
-
-/**
- * @brief 유한체 F_2^m을 섞어 x개 만큼만 배열로 출력.
- */
-
-/**
- * @brief generate set of random elements over F_2^m.
- *
- * This function use shuffle algorithm.
- *
- * @param sf_set set of random elements.
- * @param size number of random elements be generated.
- */
-void gen_random_elements_of_gf2m(OUT gf *sf_set, IN int size)
-{
-    gf set[(1 << Param_M)];
-
-    for (int i = 0; i < (1 << Param_M); i++)
-        set[i] = i;
-
-    for (int i = (1 << Param_M) - 1; i > 0; i--)
-    {
-        u8 seed[2];
-        u32 rand_num;
-
-        //! randombytes(seed, 2);
-        // srand(time(NULL));
-        seed[0] = (u8)rand();
-        seed[1] = (u8)rand();
-        //! 일단 rand 함수로 사용.
-
-        rand_num = seed[0];
-        rand_num ^= (seed[1] << 8);
-
-        int j = rand_num % (i + 1);
-
-        gf tmp = set[j];
-        set[j] = set[i];
-        set[i] = tmp;
-    }
-
-    // return
-    for (int i = 0; i < size; i++)
-        sf_set[i] = set[i];
 }
